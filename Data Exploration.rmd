@@ -1,5 +1,5 @@
 ---
-title: "Midterm - Question2"
+title: "Data Exploration"
 author: "Hieu Nguyen"
 date: "2023-03-02"
 output: pdf_document
