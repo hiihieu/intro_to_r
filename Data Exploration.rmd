@@ -1,0 +1,149 @@
+---
+title: "Midterm - Question2"
+author: "Hieu Nguyen"
+date: "2023-03-02"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exploratory_Data_Analysis - Melbourne Housing Prices
+
+
+```{r}
+#install.packages("ggplot2")
+library("ggplot2")
+```
+
+
+```{r Question 1: Read file and print summary}
+#Question 1: Read file and print summary
+
+house<- read.csv("C:/Users/Hieuhieu/Documents/Intro to R/Input/melbourne_housing_prices.csv")
+summary(house)
+```
+
+
+```{r Question 2: Find the missing value in each column }
+#Q2. Which variables/vectors have missing data
+# count the missing values by column wise
+print("Count of missing values by column wise")
+sapply(house, function(x) sum(is.na(x)))
+
+```
+The data shows us that 3 columns that have missing data: Car, BuildingArea, YearBuilt
+- Car variable (int): The household may not have any carspot, so missing value will be assign to 0 
+
+For Landsize and Building Area, these are important factors and the missing value's volumn is moderate compared with the data set, so we can not delete them
+
+- YearBuild: Replace with mean of the column. 
+- Building Area: Replace with mean of the column. 
+
+
+```
+
+```
+
+```{r Missing data}
+# Replace NA of Car with 0
+house$Car <- replace(house$Car,is.na(house$Car), 0)
+summary(house$Car)
+
+
+# Replace BuildingArea missing value with mean value of that column
+house$BuildingArea[is.na(house$BuildingArea)] <- mean(house$BuildingArea,
+                                        na.rm = TRUE)
+summary(house$BuildingArea)
+
+
+#Replace Year missing value with mean value of that column
+house$YearBuilt[is.na(house$YearBuilt)] <-mean(house$YearBuilt, na.rm = TRUE)
+summary(house$YearBuilt)
+
+#Check again to see if we miss anything
+sapply(house, function(x) sum(is.na(x)))
+```
+
+
+```{r Question 3 How is the price distributed}
+#Question 3 How is the price distribute
+
+#Plot1: Price Histogram
+ggplot(house, aes(x = Price)) + 
+  stat_bin(bins = 30, fill = "steelblue", color = "white") + 
+  labs(x = " Price", y = "count") + 
+  ggtitle(" Price Distribution") +
+  scale_x_continuous(labels = function(x) paste0("$", format(x, big.mark = ",")))
+```
+```{r}
+
+```
+
+
+```{r Scale_x_log10}
+#Plot2: Histogram using log10
+ggplot(house, aes(x = Price)) + 
+  stat_bin(bins = 30, fill = "steelblue", color = "white") + 
+  labs(x = "Price", y = "count") + 
+  ggtitle(" Price Distribution") +
+  scale_x_log10(labels = scales::dollar, 
+                breaks = scales::trans_breaks("log10", function(x) 10^x)) 
+
+```
+
+
+```{r Question 4}
+#Q4. Will the number of bedrooms impact the price of the house?
+#Plot1
+ggplot(house, aes(x = Price, fill = Rooms)) + 
+  stat_bin(bins = 30, color = "white") + 
+  labs(x = "Prices ($)", y = "Number of House") + 
+  scale_x_continuous(labels = scales::dollar_format(scale = 0.001), 
+                     limits = c(100000, 3000000)) +
+  facet_wrap(~Rooms, scales = "free_x")
+             
+```
+
+```{r}
+```
+
+
+```{r}
+#Plot2:Y-Axis scale for each of these sub-graphs is freed in the second graph.
+ggplot(house, aes(x = Price, fill = Rooms)) + 
+  stat_bin(binwidth = 100000, color = "white") + 
+  labs(x = "Prices ($)", y = "Numbers of Houses") + 
+  scale_x_continuous(labels = scales::dollar_format(scale = 0.001), 
+                     limits = c(10000, 3000000)) +
+  facet_wrap(~Rooms, scales = "free_y")
+
+```
+
+```
+```
+
+```{r}
+# Question 5:  Create a correlation matrix 
+#Print numeric columns
+numeric_column_names <- unlist(sapply(house, is.numeric))
+
+# Assign only numeric columns
+numeric_cols <- c("Rooms", "Price", "Distance", "Bedroom2", "Car", "Landsize", "BuildingArea")
+house_numeric <- house[, numeric_cols]
+
+# Calculate the correlation matrix
+corr_matrix <- cor(house_numeric)
+
+# Display the correlation matrix using knitr::kable
+knitr::kable(corr_matrix)
+```
+Correlation coefficients range from -1 to 1, with closer values indicating a stronger linear relationship between the two variables and values closer to 0 indicating a weaker or nonexistent relationship. Based on this correlation matrix, we know that: 
+
+
+- Rooms and Bedroom2 have a strong positive correlation with Price. The more expensive house will have more rooms and Bedroom2. 
+
+- Variables arrange from highest to smallest influences to Price is: Room, Bedroom2, Car, Building Area, Landsize. 
+
+- The variable Distance has negative coefficient shows that houses are farther from the neighborhood tend to be cheaper. 
