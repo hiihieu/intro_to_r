@@ -1,5 +1,5 @@
 ---
-title: "Midterm Question 3 Classification"
+title: "Classification"
 author: "Hieu Ng"
 date: "2023-03-03"
 output: pdf_document
