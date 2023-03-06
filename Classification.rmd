@@ -1,0 +1,231 @@
+---
+title: "Midterm Question 3 Classification"
+author: "Hieu Ng"
+date: "2023-03-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Classification 
+
+```{r }
+#Install packages 
+library("tinytex")
+```
+
+
+# Loading the file
+
+```{r}
+#Load file 
+bank <- read.csv("C:/Users/Hieuhieu/Documents/Intro to R/Input/bank_full.csv", sep = ";")
+
+```
+
+# Data exploration 
+
+```{r}
+#Explore data and checking statistic
+colnames(bank)
+summary(bank) 
+
+```
+- There are no missing values in the data set.
+- The prediction "y" value has 2 character which is "yes" and "no"
+
+# Preparation
+```{r}
+#Convert classification outcome from character to numerical value 
+bank$y <-ifelse(bank$y == "yes", 1, 0)
+
+#Check again to see if "yes" is converted to 1, and "no" is converted to 0
+#list(bank$y) #cmt this line because the knit file has 28 pages listing all value
+summary(bank$y)
+
+```
+# Data Transformation 
+
+```{r}
+# Factor  the independent variables that will be used for prediction 
+
+bank$job <- as.factor(bank$job)
+
+bank$marital <- as.factor(bank$marital)
+
+bank$education <- factor(bank$education, 
+              levels = c("unknown","primary","secondary","tertiary"), ordered=TRUE, exclude = NULL)
+
+bank$default <- as.factor(bank$default)
+
+bank$housing <- as.factor(bank$housing)
+
+bank$loan <- as.factor(bank$loan)
+
+bank$day <- as.factor(bank$day)
+
+bank$month <- as.factor(bank$month)
+
+bank$poutcome <- as.factor(bank$poutcome)
+
+bank$contact <- as.factor(bank$contact)
+
+```
+
+
+```{r}
+
+```
+
+
+# Create sample for testing set and training set
+
+```{r}
+#Create training sample accounts for 85% data
+#Create a testing sample accounts for 15% of dataset
+#Assign as a new column to the dataset
+set.seed(100)
+
+bank$test_train_indicator <- sample(c("Train", "Test"), 
+                               nrow(bank),
+                               replace = T,
+                               prob = c(0.85, 0.15))
+
+#Separate into training set and testing set
+
+train <- bank[bank$test_train_indicator == "Train", ]
+test <- bank[bank$test_train_indicator == "Test", ]
+#The size of the sample TEST set is 6707 obs. 
+#The size of the sample TRAINING set is 38504 obs. 
+```
+
+# Run Logistic Regression
+
+```{r}
+# Use glm function to fit the model
+myModel <- glm(y ~ ., data = train[c(-10, -11, -18)],
+               family = "binomial")
+
+summary(myModel)
+#Assign the training set to outcome                
+outcome <- predict(myModel, train[c(-10, -11, -18)], "response")
+outcome <- ifelse(outcome > 0.5, 1, 0)
+```
+# Intepreting the model 
+
+- The coefficients in the output indicate the average change in log odds of defaulting. 
+
+- If p-value < 0.05, the variable is statistically significant
+
+- If the intercept has a negative sign: then the probability of having the outcome will be < 0.5.
+- If the intercept has a positive sign: then the probability of having the outcome will be > 0.5.
+- If the intercept is equal to zero: then the probability of having the outcome will be exactly 0.5
+
+For example
+
+- The coefficient for "jobblue-collar" is -0.417 means that if an individual with blue-collar jobs are less likely to subscribe to the product. While the coefficient for "poutcomesuccess" is 2.323, indicating that this person who had a successful previous marketing campaign are more likely to subscribe. 
+
+- A  unit increase in balance is associated with an average increase of 0.000022166 in the log odds of defaulting.
+
+
+# convert the model coefficients to log-odds
+
+```{r}
+# Extract coefficients
+coef <- coef(myModel)
+
+# Calculate log-odds
+logodds <- log(coef[-1])
+
+# Identify NA values
+nas <- is.na(logodds)
+
+# Print results
+cat("Intercept: ", coef[1])
+
+summary(logodds)
+
+```
+A log odds ratio is -2.635061 which is less than 1 indicates that the probability of an event occurring is less than its probability of not occurring
+
+
+# Running the model on the training data set
+
+```{r}
+#Confusion Matrix
+# Pass the variable 
+train$outcome <- outcome
+
+#Pass the train outcome with predicted y variable to a table 
+Confusion_Matrix_1 <- as.data.frame(table(train$outcome, train$y))
+names(Confusion_Matrix_1) <- c("Prediction", "True_value", "Count")
+# Call the Confusion Matrix to see Prediction and True Value
+Confusion_Matrix_1
+
+```
+```{r}
+#Check the accuracy 
+Confusion_Matrix_1[
+  Confusion_Matrix_1$Prediction == Confusion_Matrix_1$True_value, c("Count")
+]
+# Accuracy of Training Set 
+accuracy <- sum(Confusion_Matrix_1[Confusion_Matrix_1$Prediction == Confusion_Matrix_1$True_value, "Count"])/sum(Confusion_Matrix_1$Count)
+accuracy
+```
+The test accuracy of the training sample set is 0.9004519
+
+
+# Running the model on the Testing data set 
+
+```{r}
+#Assign the test set to outcome                
+outcome <- predict(myModel, test[c(-10, -11, -18)], "response")
+outcome <- ifelse(outcome > 0.5, 1, 0)
+# Pass the variable 
+test$outcome <- outcome
+
+#Pass the test outcome with predicted y variable to a table 
+Confusion_Matrix_1 <- as.data.frame(table(test$outcome, test$y))
+names(Confusion_Matrix_1) <- c("Prediction", "True_value", "Count")
+# Call the Confusion Matrix to see Prediction and True Value
+Confusion_Matrix_1
+```
+
+```{r}
+#Check the accuracy 
+Confusion_Matrix_1[
+  Confusion_Matrix_1$Prediction == Confusion_Matrix_1$True_value, c("Count")
+]
+# Accuracy of testing Set 
+accuracy <- sum(Confusion_Matrix_1[Confusion_Matrix_1$Prediction == Confusion_Matrix_1$True_value, "Count"])/sum(Confusion_Matrix_1$Count)
+accuracy
+```
+The accuracy of the sample TEST set is 0.9002535 while the accuracy of the TRAINING set is 0.9004519
+
+# Should we retrain the model? 
+We should not retrain the "glm" model on the test sample in logistic regression. 
+
+To evaluate the performance of your model on unseen data, we splitting the data into training and test sets. 
+
+By retraining the model on the test sample, we are no longer evaluating its performance on truly unseen data, but instead using some of the same data that we used to train the model. It's easy to lead to over-fitting the model.
+
+```{r}
+```
+# Plotting Confusion Matrix with ggplot2
+
+
+```{r}
+library("ggplot2")
+ggplot(data = Confusion_Matrix_1) + 
+  geom_tile(aes(x = Prediction, y = True_value), fill=c("#D1E5F0", "#D6604D",
+                                                        "#D6604D", "#D1E5F0")) +
+                                                          
+  geom_text(aes(x = Prediction, y = True_value, label = Count))
+```
+
+```{r}
+
+```
+
